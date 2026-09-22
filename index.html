@@ -33,8 +33,8 @@
   .wrap{max-width:760px;margin:0 auto;}
 
   header.site-header{background:var(--navy);border-bottom:3px solid var(--gold);padding:1.3rem 1.25rem 1.1rem;}
-  .header-inner{max-width:760px;margin:0 auto;display:flex;align-items:center;gap:14px;}
-  .seal-slot{flex:0 0 auto;width:56px;height:56px;border-radius:50%;border:2px solid var(--gold);
+  .header-inner{max-width:760px;margin:0 auto;display:flex;align-items:center;gap:16px;}
+  .seal-slot{flex:0 0 auto;width:82px;height:82px;border-radius:50%;border:2px solid var(--gold);
     display:flex;align-items:center;justify-content:center;color:var(--gold-light);font-size:10.5px;
     text-align:center;line-height:1.25;font-family:var(--font-body);overflow:hidden;}
   .seal-slot img{width:100%;height:100%;object-fit:contain;}
@@ -63,7 +63,7 @@
   input[type=date],input[type=time]{padding:.7rem .7rem;min-height:46px;}
   input:focus,select:focus{outline:none;border-color:var(--navy);box-shadow:0 0 0 3px rgba(18,50,76,.12);}
   .row2{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
-  @media(max-width:560px){.row2{grid-template-columns:1fr;}}
+  @media(max-width:560px){.row2{grid-template-columns:1fr;} .seal-slot{width:72px;height:72px;} .header-inner{gap:12px;}}
   .duration-row{display:grid;grid-template-columns:1fr 1.2fr;gap:10px;}
 
   .suggestion-box{position:relative;z-index:20;display:none;background:var(--surface);border:1px solid var(--border);border-radius:8px;margin-top:4px;max-height:180px;overflow:auto;box-shadow:0 6px 18px rgba(0,0,0,.08);}
@@ -154,6 +154,9 @@
 
   #printArea{display:none;}
   @media print{
+    #printArea, #printArea *{font-family:'Times New Roman',serif !important;}
+    #printArea .detail-list .row{font-size:14px;text-align:center;}
+    #printArea .detail-list dt,#printArea .detail-list dd{text-align:center;}
     *{-webkit-print-color-adjust:exact !important;print-color-adjust:exact !important;color-adjust:exact !important;}
     body > *{display:none !important;}
     body > #printArea{display:block !important;}
@@ -165,16 +168,16 @@
     .print-seal{width:50px;height:50px;border-radius:50%;border:2px solid var(--gold);flex:0 0 auto;}
     .schedule-title{text-align:center;font-family:var(--font-display);font-weight:700;color:var(--navy);font-size:1.05rem;margin:0 0 1rem;}
     .schedule-section-title{font-weight:700;font-size:.88rem;margin:1rem 0 .35rem;}
-    table.schedule-table{width:100%;border-collapse:collapse;table-layout:fixed;margin-bottom:.2rem;font-size:.78rem;}
-    table.schedule-table th,table.schedule-table td{border:1px solid #444;padding:.4rem .45rem;text-align:center;word-wrap:break-word;overflow-wrap:break-word;}
+    table.schedule-table{width:100%;border-collapse:collapse;table-layout:fixed;margin-bottom:.2rem;font-size:14px;font-family:'Times New Roman',serif;direction:rtl;}
+    table.schedule-table th,table.schedule-table td{border:1px solid #444;padding:.4rem .45rem;text-align:center;vertical-align:middle;word-wrap:break-word;overflow-wrap:break-word;}
     table.schedule-table th{background:#B7C6EB;color:#1a1a1a;font-weight:700;}
   }
   /* أنماط جدول المواعيد اليومي (تُستخدم أيضاً في المعاينة داخل لوحة الإدارة) */
   .schedule-title-screen{text-align:center;font-family:var(--font-display);font-weight:700;color:var(--navy);font-size:1.1rem;margin:0 0 1rem;}
   .schedule-section-title-screen{font-weight:700;font-size:.88rem;margin:1rem 0 .35rem;color:var(--navy);}
   .schedule-table-scroll{overflow-x:auto;margin-bottom:.2rem;-webkit-overflow-scrolling:touch;}
-  table.schedule-table-screen{width:100%;border-collapse:collapse;table-layout:fixed;font-size:.72rem;}
-  table.schedule-table-screen th,table.schedule-table-screen td{border:1px solid var(--border);padding:.4rem .25rem;text-align:center;word-wrap:break-word;overflow-wrap:break-word;}
+  table.schedule-table-screen{width:100%;border-collapse:collapse;table-layout:fixed;font-size:14px;font-family:'Times New Roman',serif;direction:rtl;}
+  table.schedule-table-screen th,table.schedule-table-screen td{border:1px solid var(--border);padding:.4rem .25rem;text-align:center;vertical-align:middle;word-wrap:break-word;overflow-wrap:break-word;}
   table.schedule-table-screen th{background:#DCE4F7;color:var(--navy);font-weight:700;
     white-space:nowrap;
   }
@@ -224,14 +227,14 @@
         </div>
 
         <div class="field">
-          <label for="hostTitleInput">صفة المستقبِل</label>
+          <label for="hostTitleInput">منصب/صفة صاحب الدعوة</label>
           <input type="text" id="hostTitleInput" list="hostTitleList" placeholder="مثال: وكيل الوزارة للعلاقات الثنائية" autocomplete="off">
           <datalist id="hostTitleList"></datalist><div class="suggestion-box" id="hostTitleSuggestions"></div>
         </div>
 
         <div class="field">
-          <label for="hostInput">اسم المضيف</label>
-          <input type="text" id="hostInput" list="hostList" placeholder="اكتب اسم المضيف" autocomplete="off">
+          <label for="hostInput">اسم صاحب الدعوة</label>
+          <input type="text" id="hostInput" list="hostList" placeholder="اكتب اسم صاحب الدعوة" autocomplete="off">
           <datalist id="hostList"></datalist><div class="suggestion-box" id="hostSuggestions"></div>
         </div>
 
@@ -287,7 +290,7 @@
         <div class="field checklist-field">
           <label class="checkbox-line">
             <input type="checkbox" id="securityInfoSent">
-            <span>هل قمت بارسال معلومات الحضور والعجلات الى المشرف الامني؟</span>
+            <span>هل قمت بتزويد قسم التشريفات بمعلومات الحضور والعجلات؟</span>
           </label>
           <label class="checkbox-line">
             <input type="checkbox" id="officialLetterSent">
@@ -328,7 +331,7 @@
         <div class="field"><label for="trackDate">تاريخ اللقاء</label>
           <input type="date" id="trackDate"></div>
         <button type="submit" class="primary">بحث</button>
-        <p class="hint" style="margin-top:.6rem;">لأسباب أمنية، لا تُعرض أسماء المضيف والضيوف في نتائج هذا النوع من البحث. لعرض التفاصيل الكاملة استخدم رقم الطلب.</p>
+        <p class="hint" style="margin-top:.6rem;">لأسباب أمنية، لا تُعرض أسماء صاحب الدعوة والضيوف في نتائج هذا النوع من البحث. لعرض التفاصيل الكاملة استخدم رقم الطلب.</p>
       </form>
 
       <div id="trackResults" style="margin-top:1.3rem;"></div>
@@ -408,13 +411,23 @@ const API_URL = "https://script.google.com/macros/s/AKfycbxvsi4XjbX2pSWMN7c16LLG
 function sleep(ms){ return new Promise(r => setTimeout(r, ms)); }
 
 async function callServerRaw(fnName, args){
-  const res = await fetch(API_URL, {
-    method: 'POST',
-    body: JSON.stringify({ action: fnName, params: args })
-  });
-  const data = await res.json();
-  if(!data.ok) throw new Error(data.error || 'حدث خطأ في الخادم.');
-  return data.result;
+  const controller = new AbortController();
+  const timeout = setTimeout(()=>controller.abort(), 20000);
+  try {
+    const res = await fetch(API_URL, {
+      method: 'POST',
+      body: JSON.stringify({ action: fnName, params: args }),
+      signal: controller.signal
+    });
+    const data = await res.json();
+    if(!data.ok) throw new Error(data.error || 'حدث خطأ في الخادم.');
+    return data.result;
+  } catch(err) {
+    if(err && err.name === 'AbortError') throw new Error('انتهت مهلة الاتصال بالخادم.');
+    throw err;
+  } finally {
+    clearTimeout(timeout);
+  }
 }
 
 // يعيد المحاولة تلقائياً عند انقطاع مؤقت في الاتصال (شائع مع أول استخدام لخادم كان
@@ -589,9 +602,11 @@ function buildCardHTML(req, full){
 
   let peopleRows = '';
   if(full){
+    const hostRows = isMinisterRequest(req) ? '' : `
+      <div class="row"><dt>منصب/صفة صاحب الدعوة</dt><dd>${escapeHtml(req.hostTitle)}</dd></div>
+      <div class="row"><dt>اسم صاحب الدعوة</dt><dd>${escapeHtml(req.host)}</dd></div>`;
     peopleRows = `
-      <div class="row"><dt>صفة المستقبِل</dt><dd>${escapeHtml(req.hostTitle)}</dd></div>
-      <div class="row"><dt>المضيف</dt><dd>${escapeHtml(req.host)}</dd></div>
+      ${hostRows}
       <div class="row"><dt>الضيوف</dt><dd>${escapeHtml(req.guests.map(displayGuest).join('، '))}</dd></div>
       <div class="row"><dt>عدد الحضور</dt><dd>${escapeHtml(req.attendeeCount || '')}</dd></div>
       <div class="row"><dt>اسم مقدم الطلب</dt><dd>${escapeHtml(req.applicantName || '')}</dd></div>
@@ -604,7 +619,7 @@ function buildCardHTML(req, full){
     const mark = v => v ? '✅' : '—';
     checklistBlock = `
       <div class="checklist-summary">
-        <div class="row"><dt>إرسال معلومات الحضور للمشرف الأمني</dt><dd>${mark(req.securityInfoSent)}</dd></div>
+        <div class="row"><dt>تزويد قسم التشريفات بمعلومات الحضور والعجلات</dt><dd>${mark(req.securityInfoSent)}</dd></div>
         <div class="row"><dt>إرسال كتاب رسمي / مطالعة بالحجز</dt><dd>${mark(req.officialLetterSent)}</dd></div>
         <div class="row"><dt>تعهد الدائرة باستقبال الضيوف وإرشادهم</dt><dd>${mark(req.departmentPledge)}</dd></div>
       </div>
@@ -624,7 +639,7 @@ function buildCardHTML(req, full){
       <div class="row"><dt>مكان اللقاء</dt><dd>${locationLine}</dd></div>
     </dl>
     ${checklistBlock}
-    ${!full ? '<p class="masked-note">تم إخفاء أسماء المضيف والضيوف. استخدم رقم الطلب لعرض التفاصيل الكاملة.</p>' : ''}
+    ${!full ? '<p class="masked-note">تم إخفاء أسماء صاحب الدعوة والضيوف. استخدم رقم الطلب لعرض التفاصيل الكاملة.</p>' : ''}
   `;
 }
 
@@ -648,19 +663,33 @@ function buildPrintHTML(req, full){
   `;
 }
 function printRequest(req, full){
-  document.getElementById('printArea').innerHTML = buildPrintHTML(req, full);
-  window.print();
+  const printArea = document.getElementById('printArea');
+  printArea.innerHTML = buildPrintHTML(req, full);
+  // دع المتصفح يرسم منطقة الطباعة فعلياً قبل فتح نافذة الطباعة، خصوصاً على iPhone/iPad.
+  requestAnimationFrame(()=>{
+    setTimeout(()=>{
+      window.print();
+    }, 80);
+  });
 }
+window.addEventListener('afterprint', ()=>{
+  const printArea = document.getElementById('printArea');
+  if(printArea) printArea.innerHTML = '';
+});
 
 /* ============================================================
    جدول المواعيد اليومي الرسمي (تصدير PDF من لوحة الإدارة)
    ============================================================ */
 const SECTION_DEFS = [
-  { num: '١', title: 'مواعيد الفئة الأولى: الوزير', hasHost: true },
-  { num: '٢', title: 'مواعيد الفئة الثانية: الوكلاء', hasHost: true },
-  { num: '٣', title: 'مواعيد الفئة الثالثة: رؤساء الدوائر ومعاونوهم', hasHost: true },
-  { num: '٤', title: 'مواعيد الفئة الرابعة: رؤساء الأقسام وباقي موظفي الوزارة', hasHost: true }
+  { num: '١', title: 'مواعيد الوزير', hasHost: false },
+  { num: '٢', title: 'مواعيد الوكلاء', hasHost: true },
+  { num: '٣', title: 'مواعيد رؤساء الدوائر ومعاونيهم', hasHost: true },
+  { num: '٤', title: 'مواعيد رؤساء الأقسام وباقي موظفي الوزارة', hasHost: true }
 ];
+const MINISTER_CATEGORY = 'الفئة الأولى: الوزير';
+function isMinisterRequest(req){
+  return String(req && req.category || '').trim() === MINISTER_CATEGORY;
+}
 
 function toEasternDigits(s){
   const map = {'0':'٠','1':'١','2':'٢','3':'٣','4':'٤','5':'٥','6':'٦','7':'٧','8':'٨','9':'٩'};
@@ -816,6 +845,22 @@ function setFormDefaults(){
   currentRequestId = makeRequestId();
 }
 
+function updateCategoryFields(){
+  const isMinister = document.getElementById('categoryInput').value === MINISTER_CATEGORY;
+  const titleField = document.getElementById('hostTitleInput').closest('.field');
+  const hostField = document.getElementById('hostInput').closest('.field');
+  titleField.style.display = isMinister ? 'none' : '';
+  hostField.style.display = isMinister ? 'none' : '';
+  document.getElementById('hostTitleInput').required = !isMinister;
+  document.getElementById('hostInput').required = !isMinister;
+  if(isMinister){
+    document.getElementById('hostTitleInput').value = '';
+    document.getElementById('hostInput').value = '';
+  }
+}
+document.getElementById('categoryInput').addEventListener('change', updateCategoryFields);
+updateCategoryFields();
+
 addGuestRow();
 function attachStrictInputGuards(){
   const textIds = ['departmentInput','hostTitleInput','hostInput','applicantNameInput'];
@@ -865,8 +910,9 @@ function validateFormClient(payload){
   const errors = [];
   if(!payload.category) errors.push('يرجى اختيار فئة الأولوية الرسمية.');
   if(!validTextInput(payload.department)) errors.push('اسم الدائرة: أدخل أحرفاً عربية أو إنجليزية ومسافات فقط.');
-  if(!validTextInput(payload.hostTitle)) errors.push('صفة المستقبِل: أدخل أحرفاً عربية أو إنجليزية ومسافات فقط.');
-  if(!validTextInput(payload.host)) errors.push('اسم المضيف: أدخل أحرفاً عربية أو إنجليزية ومسافات فقط.');
+  const isMinister = payload.category === MINISTER_CATEGORY;
+  if(!isMinister && !validTextInput(payload.hostTitle)) errors.push('منصب/صفة صاحب الدعوة: أدخل أحرفاً عربية أو إنجليزية ومسافات فقط.');
+  if(!isMinister && !validTextInput(payload.host)) errors.push('اسم صاحب الدعوة: أدخل أحرفاً عربية أو إنجليزية ومسافات فقط.');
   if(!payload.guests.length) errors.push('يرجى إدخال اسم ضيف واحد على الأقل.');
   payload.guests.forEach(g=>{
     if(!validTextInput(g.name)) errors.push('اسم الضيف يجب أن يحتوي على أحرف عربية أو إنجليزية ومسافات فقط.');
@@ -886,8 +932,8 @@ document.getElementById('requestForm').addEventListener('submit', async (e)=>{
   const payload = {
     category: document.getElementById('categoryInput').value,
     department: document.getElementById('departmentInput').value.trim(),
-    hostTitle: document.getElementById('hostTitleInput').value.trim(),
-    host: document.getElementById('hostInput').value.trim(),
+    hostTitle: document.getElementById('categoryInput').value === MINISTER_CATEGORY ? '' : document.getElementById('hostTitleInput').value.trim(),
+    host: document.getElementById('categoryInput').value === MINISTER_CATEGORY ? '' : document.getElementById('hostInput').value.trim(),
     guests: Array.from(document.querySelectorAll('#guestsContainer .guest-row')).map(row => ({
       role: row.querySelector('.guest-role').value.trim(),
       name: row.querySelector('.guest-name').value.trim()
@@ -1177,8 +1223,8 @@ async function renderOptionsManager(){
   const opts = await callServer('getOptions');
   const groups = [
     {key:'department', label:'أسماء الدوائر', arr:opts.department},
-    {key:'hostTitle', label:'صفات المستقبِل', arr:opts.hostTitle},
-    {key:'host', label:'أسماء المضيفين', arr:opts.host}
+    {key:'hostTitle', label:'مناصب/صفات أصحاب الدعوة', arr:opts.hostTitle},
+    {key:'host', label:'أسماء أصحاب الدعوة', arr:opts.host}
   ];
   let html = '';
   for(const g of groups){
