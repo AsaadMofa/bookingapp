@@ -181,6 +181,28 @@
   table.schedule-table-screen th{background:#DCE4F7;color:var(--navy);font-weight:700;
     white-space:nowrap;
   }
+
+  .install-banner{display:flex;align-items:center;justify-content:space-between;gap:12px;max-width:760px;margin:.85rem auto 0;padding:.85rem 1rem;background:var(--surface);border:1px solid var(--gold);border-radius:10px;box-shadow:0 4px 14px rgba(0,0,0,.06);}
+  .install-banner .install-text{font-size:.86rem;color:var(--text);line-height:1.5;}
+  .install-banner .install-text strong{display:block;color:var(--navy);margin-bottom:.1rem;}
+  .install-actions{display:flex;gap:6px;align-items:center;flex:0 0 auto;}
+  .install-btn{background:var(--navy);color:#fff;border:0;border-radius:8px;padding:.55rem .8rem;font-family:var(--font-body);font-weight:700;cursor:pointer;white-space:nowrap;}
+  .install-dismiss{background:none;border:0;color:var(--muted);font-family:var(--font-body);cursor:pointer;white-space:nowrap;padding:.35rem;}
+  @media(max-width:560px){.install-banner{margin:.7rem 1.25rem 0;align-items:flex-start}.install-actions{flex-direction:column}.install-btn{width:100%}}
+  .admin-date-group{margin:1rem 0 1.2rem;border:1px solid var(--border);border-radius:10px;overflow:hidden;background:var(--surface);}
+  .admin-date-header{padding:.75rem .9rem;background:var(--navy);color:#fff;display:flex;justify-content:space-between;align-items:center;gap:8px;font-weight:700;}
+  .admin-date-count{font-size:.78rem;opacity:.85;font-weight:500;}
+  .admin-summary{display:grid;grid-template-columns:1.05fr 1.45fr 1.4fr auto;gap:10px;align-items:center;width:100%;}
+  .admin-summary-main{display:flex;flex-direction:column;gap:2px;min-width:0;}
+  .admin-summary-label{font-size:.7rem;color:var(--muted);}
+  .admin-summary-value{font-size:.88rem;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .admin-time{font-weight:700;color:var(--navy);white-space:nowrap;direction:rtl;}
+  .admin-edit-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+  .admin-hours-warning{margin-top:.6rem;}
+  @media(max-width:650px){.admin-summary{grid-template-columns:1fr 1fr}.admin-summary .admin-status-cell{justify-self:start}.admin-edit-grid{grid-template-columns:1fr}}
+  .copy-code-btn{background:var(--gold-light);color:var(--navy);border:1px solid var(--gold);border-radius:8px;padding:.65rem .9rem;font-family:var(--font-body);font-weight:700;cursor:pointer;}
+  .copy-code-btn:active{transform:translateY(1px);}
+
 </style>
 </head>
 <body>
@@ -195,6 +217,11 @@
     </div>
   </div>
 </header>
+
+<div id="installBanner" class="install-banner" style="display:none;">
+  <div class="install-text"><strong>ثبّت التطبيق على هاتفك</strong><span>للوصول السريع إلى بوابة حجز المواعيد من الشاشة الرئيسية.</span></div>
+  <div class="install-actions"><button type="button" class="install-btn" id="installAppBtn">تثبيت التطبيق</button><button type="button" class="install-dismiss" id="installDismissBtn">ليس الآن</button></div>
+</div>
 
 <nav class="tabs no-print">
   <button class="tab-btn active" data-tab="new">طلب موعد جديد</button>
@@ -373,6 +400,7 @@
           <div id="schedulePreviewWrap" style="margin-top:1.1rem;"></div>
         </div>
 
+        <div class="alert info" style="margin-bottom:.9rem;">تُعرض الطلبات هنا مجمّعة حسب تاريخ اللقاء، ومرتبة حسب الوقت. اضغط على أي حجز لتعديل التاريخ أو الوقت أو الحالة أو القاعة.</div>
         <div id="adminRequestsList"></div>
         <datalist id="roomList"></datalist>
 
@@ -407,6 +435,27 @@
 // مثال: https://script.google.com/macros/s/AKfycb.../exec
 // ============================================================
 const API_URL = "https://script.google.com/macros/s/AKfycbxvsi4XjbX2pSWMN7c16LLGyq1j8K24cuBfSOiW44fB6DyQaxV6dmHHHR1JLlm-gsxi/exec";
+
+let deferredInstallPrompt = null;
+const installBanner = document.getElementById('installBanner');
+const installAppBtn = document.getElementById('installAppBtn');
+const installDismissBtn = document.getElementById('installDismissBtn');
+function isStandaloneMode(){ return window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true; }
+function showInstallBanner(){ if(installBanner && !isStandaloneMode()) installBanner.style.display='flex'; }
+function hideInstallBanner(){ if(installBanner) installBanner.style.display='none'; }
+window.addEventListener('beforeinstallprompt', e=>{ e.preventDefault(); deferredInstallPrompt=e; showInstallBanner(); });
+window.addEventListener('appinstalled', ()=>{ deferredInstallPrompt=null; hideInstallBanner(); });
+if(installAppBtn) installAppBtn.addEventListener('click', async ()=>{
+  if(!deferredInstallPrompt){ showToast('إذا لم يظهر التثبيت بعد، انتظر لحظات ثم اضغط الزر مرة أخرى.'); return; }
+  const p=deferredInstallPrompt; deferredInstallPrompt=null;
+  try{ await p.prompt(); await p.userChoice; }catch(err){}
+  hideInstallBanner();
+});
+if(installDismissBtn) installDismissBtn.addEventListener('click', hideInstallBanner);
+window.addEventListener('load', ()=>{
+  showInstallBanner();
+  if('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js').catch(()=>{});
+});
 
 function sleep(ms){ return new Promise(r => setTimeout(r, ms)); }
 
@@ -470,6 +519,15 @@ function showToast(msg){
   const t = document.getElementById('toast');
   t.textContent = msg; t.classList.add('show');
   setTimeout(()=>t.classList.remove('show'), 2200);
+}
+async function copyRequestCode(code, button){
+  const original=button?button.textContent:'';
+  try{
+    if(navigator.clipboard && window.isSecureContext) await navigator.clipboard.writeText(String(code));
+    else { const ta=document.createElement('textarea'); ta.value=String(code); ta.setAttribute('readonly',''); ta.style.position='fixed'; ta.style.opacity='0'; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); ta.remove(); }
+    if(button){ button.textContent='✓ تم نسخ رمز التأكيد'; setTimeout(()=>button.textContent=original,1800); }
+    showToast('تم نسخ رمز التأكيد');
+  }catch(err){ showToast('تعذّر النسخ تلقائياً. اضغط مطولاً على الرمز لنسخه.'); }
 }
 
 /* ============================================================
@@ -878,6 +936,15 @@ attachStrictInputGuards();
 populateAllDatalists();
 setFormDefaults();
 
+function buildClientAfterHoursWarning(){
+  const time=document.getElementById('meetingTime').value, durationValue=Number(document.getElementById('durationValue').value), unit=document.getElementById('durationUnit').value;
+  if(!time || !durationValue) return ''; const [h,m]=time.split(':').map(Number); if(Number.isNaN(h)||Number.isNaN(m)) return '';
+  const end=h*60+m+(unit==='hours'?durationValue*60:durationValue); if(end<=14*60) return '';
+  let eh=Math.floor(end/60), em=end%60, suf=eh<12?'ص':'م', h12=eh%12||12;
+  return `تنبيه: مدة اللقاء تتجاوز نهاية الدوام الرسمي (٢:٠٠ ظهراً)، وينتهي الوقت المطلوب تقريباً عند ${h12}:${String(em).padStart(2,'0')} ${suf}. يمكنك متابعة الحجز دون منعه.`;
+}
+function renderTimeWarnings(conflictHtml){ const box=document.getElementById('conflictWarning'); const after=buildClientAfterHoursWarning(); box.innerHTML=(after?`<div class="alert warning">⚠️ ${escapeHtml(after)}</div>`:'')+(conflictHtml||''); }
+
 let conflictCheckTimer = null;
 async function checkConflictNow(){
   const date = document.getElementById('meetingDate').value;
@@ -888,10 +955,10 @@ async function checkConflictNow(){
   if(!date || !time || !durationValue){ box.innerHTML = ''; return; }
   try{
     const conflicts = await callServer('checkTimeConflict', date, time, durationValue, durationUnit);
-    if(!conflicts || conflicts.length === 0){ box.innerHTML = ''; return; }
+    if(!conflicts || conflicts.length === 0){ renderTimeWarnings(''); return; }
     const lines = conflicts.map(c => `${formatTimeRange(c.time, Number(c.durationValue), c.durationUnit)} (${STATUS_LABELS[c.status] || c.status})`).join('، ');
-    box.innerHTML = `<div class="alert warning">⚠️ يوجد حجز آخر في هذا التاريخ يتقاطع مع الوقت المختار: ${escapeHtml(lines)}. يمكنك المتابعة، لكن يُفضّل التأكد قبل الإرسال.</div>`;
-  }catch(err){ box.innerHTML = ''; }
+    renderTimeWarnings(`<div class="alert warning">⚠️ يوجد حجز آخر في هذا التاريخ يتقاطع مع الوقت المختار: ${escapeHtml(lines)}. يمكنك المتابعة، لكن يُفضّل التأكد قبل الإرسال.</div>`);
+  }catch(err){ renderTimeWarnings(''); }
 }
 function scheduleConflictCheck(){
   clearTimeout(conflictCheckTimer);
@@ -990,14 +1057,17 @@ document.getElementById('requestForm').addEventListener('submit', async (e)=>{
   const confirmView = document.getElementById('confirmationView');
   confirmView.style.display = 'block';
   confirmView.innerHTML = `
-    <div class="alert info">تم إرسال طلبكم بنجاح. يرجى حفظ رقم الطلب أدناه لمتابعة حالته لاحقاً.</div>
+    <div class="alert info">تم إرسال طلبكم بنجاح.<br><strong>يرجى الاحتفاظ برقم الطلب لغرض متابعة حالة الحجز.</strong></div>
     ${result.sameDayWarning ? '<div class="alert warning">لقد تم تسجيل حجز مسبقاً بهذا الوقت بالفعل، يرجى متابعة حالة الطلب لاحقاً</div>' : ''}
+    ${result.afterHoursWarning ? `<div class="alert warning">⚠️ ${escapeHtml(result.afterHoursWarning)}</div>` : ''}
     ${buildCardHTML(result.request, true)}
     <div class="actions-row">
+      <button type="button" class="copy-code-btn" id="copyConfirmationCodeBtn">نسخ رمز التأكيد</button>
       <button type="button" class="primary" id="printBtn">طباعة / حفظ PDF</button>
       <button type="button" class="secondary" id="newRequestBtn">تقديم طلب آخر</button>
     </div>
   `;
+  document.getElementById('copyConfirmationCodeBtn').addEventListener('click', function(){ copyRequestCode(result.request.code, this); });
   document.getElementById('printBtn').addEventListener('click', ()=> printRequest(result.request, true));
   document.getElementById('newRequestBtn').addEventListener('click', ()=>{
     document.getElementById('requestForm').reset();
@@ -1035,13 +1105,10 @@ document.querySelectorAll('.search-toggle-btn').forEach(btn=>{
 });
 
 function renderTrackedRequest(req, full){
-  const box = document.getElementById('trackResults');
-  box.innerHTML = `
-    <div class="card" style="border:1px solid var(--border);border-radius:var(--radius);">
-      ${buildCardHTML(req, full)}
-      <div class="actions-row"><button type="button" class="primary" id="trackPrintBtn">طباعة / حفظ PDF</button></div>
-    </div>`;
-  document.getElementById('trackPrintBtn').addEventListener('click', ()=> printRequest(req, full));
+  const box=document.getElementById('trackResults');
+  box.innerHTML=`<div class="card" style="border:1px solid var(--border);border-radius:var(--radius);">${buildCardHTML(req,full)}<div class="actions-row"><button type="button" class="copy-code-btn" id="trackCopyCodeBtn">نسخ رمز التأكيد</button><button type="button" class="primary" id="trackPrintBtn">طباعة / حفظ PDF</button></div></div>`;
+  document.getElementById('trackCopyCodeBtn').addEventListener('click',function(){copyRequestCode(req.code,this);});
+  document.getElementById('trackPrintBtn').addEventListener('click',()=>printRequest(req,full));
 }
 
 document.getElementById('searchByCodeForm').addEventListener('submit', async (e)=>{
@@ -1139,108 +1206,55 @@ function roomSelectHTML(code, selected){
   return `<select class="admin-location" data-code="${escapeHtml(code)}">${options.join('')}</select>`;
 }
 
+function adminDateGroupSort(a,b){
+  const today=todayISO(), ad=a.date||'', bd=b.date||'', af=ad>=today, bf=bd>=today;
+  if(af!==bf) return af?-1:1; return af?ad.localeCompare(bd):bd.localeCompare(ad);
+}
+function buildAdminSummaryHTML(r){
+  const host=isMinisterRequest(r)?'الوزير':(r.host||'—'), guests=(r.guests||[]).map(displayGuest).join('، ')||'—';
+  return `<div class="admin-summary"><div class="admin-summary-main"><span class="admin-summary-label">الوقت</span><span class="admin-time">${escapeHtml(formatTimeRange(r.time,Number(r.durationValue),r.durationUnit))}</span></div><div class="admin-summary-main"><span class="admin-summary-label">صاحب الدعوة</span><span class="admin-summary-value">${escapeHtml(host)}</span></div><div class="admin-summary-main"><span class="admin-summary-label">الضيف</span><span class="admin-summary-value" title="${escapeHtml(guests)}">${escapeHtml(guests)}</span></div><div class="admin-status-cell"><span class="badge ${STATUS_CLASS[r.status]||'pending'}">${STATUS_LABELS[r.status]||'قيد المراجعة'}</span></div></div>`;
+}
+function buildAdminDetailsHTML(r){
+  const hostRows=isMinisterRequest(r)?'':`<div class="row"><dt>منصب/صفة صاحب الدعوة</dt><dd>${escapeHtml(r.hostTitle||'')}</dd></div><div class="row"><dt>اسم صاحب الدعوة</dt><dd>${escapeHtml(r.host||'')}</dd></div>`;
+  return `<dl class="detail-list"><div class="row"><dt>الفئة</dt><dd>${escapeHtml(r.category||'')}</dd></div><div class="row"><dt>الدائرة</dt><dd>${escapeHtml(r.department||'')}</dd></div>${hostRows}<div class="row"><dt>الضيوف</dt><dd>${escapeHtml((r.guests||[]).map(displayGuest).join('، '))}</dd></div><div class="row"><dt>عدد الحضور</dt><dd>${escapeHtml(r.attendeeCount||'')}</dd></div><div class="row"><dt>اسم مقدم الطلب</dt><dd>${escapeHtml(r.applicantName||'')}</dd></div><div class="row"><dt>رقم الهاتف</dt><dd dir="ltr" style="text-align:right;">${escapeHtml(r.phone||'')}</dd></div></dl>`;
+}
+function adminHoursWarningFor(r,date,time){
+  const [h,m]=String(time||'').split(':').map(Number); if(Number.isNaN(h)||Number.isNaN(m)) return '';
+  const end=h*60+m+(r.durationUnit==='hours'?Number(r.durationValue)*60:Number(r.durationValue)); if(end<=14*60) return '';
+  const eh=Math.floor(end/60),em=end%60,suf=eh<12?'ص':'م',h12=eh%12||12;
+  return `<div class="alert warning admin-hours-warning">⚠️ تنبيه: مدة اللقاء تتجاوز نهاية الدوام الرسمي، وينتهي الوقت المطلوب تقريباً عند ${h12}:${String(em).padStart(2,'0')} ${suf}. يمكن حفظ التعديل دون منع الحجز.</div>`;
+}
 async function loadAdminDashboard(){
-  const listBox = document.getElementById('adminRequestsList');
-  listBox.innerHTML = '<div class="empty-state">جارٍ التحميل...</div>';
-  let res;
-  try{
-    res = await callServer('adminListAll', adminPass);
-  }catch(err){
-    listBox.innerHTML = `<div class="alert error">تعذّر الاتصال بالخادم: ${escapeHtml(err && err.message ? err.message : String(err))}</div>`;
-    return;
-  }
-  if(!res.ok){ listBox.innerHTML = `<div class="alert error">${escapeHtml(res.error)}</div>`; return; }
-  const all = res.requests;
-
-  if(all.length === 0){
-    listBox.innerHTML = '<div class="empty-state">لا توجد طلبات حتى الآن.</div>';
-  } else {
-    listBox.innerHTML = all.map(r => `
-      <details class="admin-item">
-        <summary>
-          <span><span class="code" style="color:var(--navy);font-weight:700;direction:ltr;display:inline-block;">${escapeHtml(r.code)}</span> — ${escapeHtml(r.department)}</span>
-          <span class="badge ${STATUS_CLASS[r.status]}">${STATUS_LABELS[r.status]}</span>
-        </summary>
-        <div class="admin-body">
-          ${buildCardHTML(r, true)}
-          <div class="field" style="margin-top:1rem;">
-            <label>تحديث الحالة</label>
-            <select class="admin-status" data-code="${escapeHtml(r.code)}">
-              <option value="pending" ${r.status==='pending'?'selected':''}>قيد المراجعة</option>
-              <option value="confirmed" ${r.status==='confirmed'?'selected':''}>مؤكَّد</option>
-              <option value="rejected" ${r.status==='rejected'?'selected':''}>تم الاعتذار عن الطلب</option>
-            </select>
-          </div>
-          <div class="field">
-            <label>مكان اللقاء</label>
-            ${roomSelectHTML(r.code, r.location||'')}
-          </div>
-          <button type="button" class="primary admin-save-btn" data-code="${escapeHtml(r.code)}">حفظ التحديث</button>
-          <div class="admin-actions"><button type="button" class="admin-delete-btn admin-delete-request" data-code="${escapeHtml(r.code)}">🗑 حذف هذا الطلب</button></div>
-        </div>
-      </details>
-    `).join('');
-
-    listBox.querySelectorAll('.admin-save-btn').forEach(btn=>{
-      btn.addEventListener('click', async ()=>{
-        const code = btn.dataset.code;
-        const status = listBox.querySelector(`.admin-status[data-code="${CSS.escape(code)}"]`).value;
-        const location = listBox.querySelector(`.admin-location[data-code="${CSS.escape(code)}"]`).value.trim();
-        btn.disabled = true; btn.textContent = 'جارٍ الحفظ...';
-        try{
-          const saved = await callServer('adminUpdateRequest', adminPass, code, status, location);
-          if(!saved.ok) throw new Error(saved.error || 'تعذّر حفظ التحديث.');
-          showToast('تم حفظ التحديث');
-          await loadAdminDashboard();
-        }catch(err){
-          showToast(err.message || 'تعذّر حفظ التحديث');
-          btn.disabled = false; btn.textContent = 'حفظ التحديث';
-        }
-      });
-    });
-    listBox.querySelectorAll('.admin-delete-request').forEach(btn=>{
-      btn.addEventListener('click', async ()=>{
-        const code = btn.dataset.code;
-        if(!confirm('سيتم حذف هذا الطلب نهائياً. هل تريد المتابعة؟')) return;
-        btn.disabled = true; btn.textContent = 'جارٍ الحذف...';
-        try{
-          const res = await callServer('adminDeleteRequest', adminPass, code);
-          if(!res.ok) throw new Error(res.error || 'تعذّر حذف الطلب.');
-          showToast('تم حذف الطلب');
-          await loadAdminDashboard();
-        }catch(err){
-          showToast(err.message || 'تعذّر حذف الطلب');
-          btn.disabled = false; btn.textContent = 'حذف الطلب';
-        }
-      });
-    });
-  }
+  const listBox=document.getElementById('adminRequestsList'); listBox.innerHTML='<div class="empty-state">جارٍ تحميل الحجوزات...</div>';
+  let res; try{res=await callServer('adminListAll',adminPass);}catch(err){listBox.innerHTML=`<div class="alert error">تعذّر الاتصال بالخادم: ${escapeHtml(err&&err.message?err.message:String(err))}</div>`;return;}
+  if(!res.ok){listBox.innerHTML=`<div class="alert error">${escapeHtml(res.error)}</div>`;return;}
+  const all=Array.isArray(res.requests)?res.requests.slice():[];
+  if(!all.length){listBox.innerHTML='<div class="empty-state">لا توجد طلبات حتى الآن.</div>';await renderOptionsManager();return;}
+  all.sort((a,b)=>{const g=adminDateGroupSort(a,b);return g||String(a.time||'').localeCompare(String(b.time||''));});
+  const groups=[],map=new Map();
+  all.forEach(r=>{const key=String(r.date||'بدون تاريخ');if(!map.has(key)){const g={date:key,items:[]};map.set(key,g);groups.push(g);}map.get(key).items.push(r);});
+  listBox.innerHTML=groups.map(group=>{
+    const label=group.date==='بدون تاريخ'?'بدون تاريخ':formatDateArabic(group.date);
+    const cards=group.items.map(r=>`<details class="admin-item" data-code="${escapeHtml(r.code)}"><summary>${buildAdminSummaryHTML(r)}</summary><div class="admin-body">${buildAdminDetailsHTML(r)}<div class="admin-edit-grid" style="margin-top:1rem;"><div class="field" style="margin-bottom:0;"><label>تاريخ اللقاء</label><input type="date" class="admin-date" data-code="${escapeHtml(r.code)}" value="${escapeHtml(r.date||'')}"></div><div class="field" style="margin-bottom:0;"><label>وقت اللقاء</label><input type="time" class="admin-time-input" data-code="${escapeHtml(r.code)}" value="${escapeHtml(r.time||'')}" step="300"></div></div><div class="admin-live-warning" data-code="${escapeHtml(r.code)}">${adminHoursWarningFor(r,r.date,r.time)}</div><div class="field" style="margin-top:1rem;"><label>تحديث الحالة</label><select class="admin-status" data-code="${escapeHtml(r.code)}"><option value="pending" ${r.status==='pending'?'selected':''}>قيد المراجعة</option><option value="confirmed" ${r.status==='confirmed'?'selected':''}>مؤكَّد</option><option value="rejected" ${r.status==='rejected'?'selected':''}>تم الاعتذار عن الطلب</option></select></div><div class="field"><label>مكان اللقاء</label>${roomSelectHTML(r.code,r.location||'')}</div><button type="button" class="primary admin-save-btn" data-code="${escapeHtml(r.code)}">حفظ التحديث</button><div class="admin-actions"><button type="button" class="admin-delete-btn admin-delete-request" data-code="${escapeHtml(r.code)}">🗑 حذف هذا الطلب</button></div></div></details>`).join('');
+    return `<div class="admin-date-group"><div class="admin-date-header"><span>${escapeHtml(label)}</span><span class="admin-date-count">${toEasternDigits(String(group.items.length))} حجز</span></div>${cards}</div>`;
+  }).join('');
+  listBox.querySelectorAll('.admin-date,.admin-time-input').forEach(input=>input.addEventListener('change',()=>{const code=input.dataset.code,date=listBox.querySelector(`.admin-date[data-code="${CSS.escape(code)}"]`).value,time=listBox.querySelector(`.admin-time-input[data-code="${CSS.escape(code)}"]`).value,req=all.find(x=>x.code===code),warning=listBox.querySelector(`.admin-live-warning[data-code="${CSS.escape(code)}"]`);if(warning&&req)warning.innerHTML=adminHoursWarningFor(req,date,time);}));
+  listBox.querySelectorAll('.admin-save-btn').forEach(btn=>btn.addEventListener('click',async()=>{
+    const code=btn.dataset.code,status=listBox.querySelector(`.admin-status[data-code="${CSS.escape(code)}"]`).value,location=listBox.querySelector(`.admin-location[data-code="${CSS.escape(code)}"]`).value.trim(),date=listBox.querySelector(`.admin-date[data-code="${CSS.escape(code)}"]`).value,time=listBox.querySelector(`.admin-time-input[data-code="${CSS.escape(code)}"]`).value;
+    btn.disabled=true;btn.textContent='جارٍ الحفظ...';
+    try{const saved=await callServer('adminUpdateRequest',adminPass,code,status,location,date,time);if(!saved.ok)throw new Error(saved.error||'تعذّر حفظ التحديث.');showToast(saved.afterHoursWarning?'تم الحفظ مع تنبيه تجاوز نهاية الدوام':'تم حفظ التحديث');await loadAdminDashboard();}catch(err){showToast(err.message||'تعذّر حفظ التحديث');btn.disabled=false;btn.textContent='حفظ التحديث';}
+  }));
+  listBox.querySelectorAll('.admin-delete-request').forEach(btn=>btn.addEventListener('click',async()=>{const code=btn.dataset.code;if(!confirm('سيتم حذف هذا الطلب نهائياً. هل تريد المتابعة؟'))return;btn.disabled=true;btn.textContent='جارٍ الحذف...';try{const del=await callServer('adminDeleteRequest',adminPass,code);if(!del.ok)throw new Error(del.error||'تعذّر حذف الطلب.');showToast('تم حذف الطلب');await loadAdminDashboard();}catch(err){showToast(err.message||'تعذّر حذف الطلب');btn.disabled=false;btn.textContent='حذف الطلب';}}));
   await renderOptionsManager();
 }
 
 async function renderOptionsManager(){
-  const box = document.getElementById('optionsManager');
-  const opts = await callServer('getOptions');
-  const groups = [
-    {key:'department', label:'أسماء الدوائر', arr:opts.department},
-    {key:'hostTitle', label:'مناصب/صفات أصحاب الدعوة', arr:opts.hostTitle},
-    {key:'host', label:'أسماء أصحاب الدعوة', arr:opts.host}
-  ];
-  let html = '';
-  for(const g of groups){
-    html += `<div class="options-group"><h4>${g.label}</h4><div class="chip-list">
-      ${g.arr.length ? g.arr.map(v => `<span class="chip">${escapeHtml(v)}<button type="button" class="chip-remove" data-key="${g.key}" data-value="${escapeHtml(v)}">×</button></span>`).join('') : '<span style="font-size:.8rem;color:var(--muted);">لا توجد عناصر محفوظة</span>'}
-    </div></div>`;
-  }
-  box.innerHTML = html;
-  box.querySelectorAll('.chip-remove').forEach(btn=>{
-    btn.addEventListener('click', async ()=>{
-      await callServer('adminRemoveOption', adminPass, btn.dataset.key, btn.dataset.value);
-      await populateAllDatalists();
-      renderOptionsManager();
-      showToast('تم الحذف');
-    });
-  });
+  const box=document.getElementById('optionsManager'); let opts;
+  try{opts=await callServer('getOptions');}catch(err){box.innerHTML='<div class="alert error">تعذّر تحميل القوائم المحفوظة.</div>';return;}
+  const groups=[{key:'department',label:'أسماء الدوائر',arr:opts.department||[]},{key:'hostTitle',label:'مناصب/صفات أصحاب الدعوة',arr:opts.hostTitle||[]},{key:'host',label:'أسماء أصحاب الدعوة',arr:opts.host||[]},{key:'guestRole',label:'صفات/جهات الضيوف',arr:opts.guestRole||[]}];
+  let html=''; for(const g of groups){html+=`<div class="options-group"><h4>${g.label}</h4><div class="chip-list">${g.arr.length?g.arr.map(v=>`<span class="chip">${escapeHtml(v)}<button type="button" class="chip-remove" title="حذف" data-key="${escapeHtml(g.key)}" data-value="${escapeHtml(v)}">×</button></span>`).join(''):'<span style="font-size:.8rem;color:var(--muted);">لا توجد عناصر محفوظة</span>'}</div></div>`;}
+  box.innerHTML=html;
+  box.querySelectorAll('.chip-remove').forEach(btn=>btn.addEventListener('click',async()=>{const value=btn.dataset.value,category=btn.dataset.key;if(!confirm(`حذف "${value}" من القوائم المحفوظة؟`))return;btn.disabled=true;try{const result=await callServer('adminRemoveOption',adminPass,category,value);if(!result.ok)throw new Error(result.error||'تعذّر حذف العنصر.');if(savedSuggestions[category])savedSuggestions[category]=savedSuggestions[category].filter(v=>String(v)!==String(value));await populateAllDatalists();await renderOptionsManager();showToast('تم حذف العنصر من القائمة المحفوظة');}catch(err){btn.disabled=false;showToast(err.message||'تعذّر حذف العنصر');}}));
 }
 
 document.getElementById('clearAllBtn').addEventListener('click', async ()=>{
