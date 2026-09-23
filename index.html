@@ -100,10 +100,11 @@
   .checkbox-line:last-of-type{margin-bottom:0;}
   .checkbox-line input[type=checkbox]{width:18px;height:18px;flex:0 0 auto;margin-top:.15rem;accent-color:var(--navy);}
 
-  .seal{width:120px;height:120px;border-radius:50%;margin:.2rem auto 1rem;border:3px double var(--gold);
-    display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;color:var(--navy);}
-  .seal .k{font-size:.68rem;color:var(--muted);} 
-  .seal .v{font-family:var(--font-display);font-weight:700;font-size:1rem;line-height:1.25;color:var(--navy);direction:ltr;}
+  .confirmation-code-box{margin:.2rem auto 1rem;padding:.8rem 1rem;border:2px solid var(--gold);border-radius:10px;background:var(--surface-alt);text-align:center;color:var(--navy);max-width:360px;}
+  .confirmation-code-box .k{display:block;font-size:.72rem;color:var(--muted);margin-bottom:.35rem;}
+  .confirmation-code-box .v{display:block;font-family:var(--font-display);font-weight:700;font-size:1.05rem;line-height:1.35;color:var(--navy);direction:ltr;letter-spacing:.3px;}
+  .confirmation-code-copy{display:flex;justify-content:center;margin:-.35rem auto 1rem;}
+  .confirmation-code-copy .copy-code-btn{min-width:210px;}
   .badge{display:inline-block;padding:.3rem .8rem;border-radius:99px;font-size:.82rem;font-weight:700;}
   .badge.pending{background:var(--warning-bg);color:var(--warning);}
   .badge.confirmed{background:var(--success-bg);color:var(--success);}
@@ -190,6 +191,10 @@
   .install-dismiss{background:none;border:0;color:var(--muted);font-family:var(--font-body);cursor:pointer;white-space:nowrap;padding:.35rem;}
   @media(max-width:560px){.install-banner{margin:.7rem 1.25rem 0;align-items:flex-start}.install-actions{flex-direction:column}.install-btn{width:100%}}
   .admin-date-group{margin:1rem 0 1.2rem;border:1px solid var(--border);border-radius:10px;overflow:hidden;background:var(--surface);}
+  .admin-date-group > summary{list-style:none;cursor:pointer;}
+  .admin-date-group > summary::-webkit-details-marker{display:none;}
+  .admin-date-group > summary::after{content:'⌄';font-size:1rem;opacity:.9;transition:transform .2s ease;}
+  .admin-date-group:not([open]) > summary::after{transform:rotate(90deg);}
   .admin-date-header{padding:.75rem .9rem;background:var(--navy);color:#fff;display:flex;justify-content:space-between;align-items:center;gap:8px;font-weight:700;}
   .admin-date-count{font-size:.78rem;opacity:.85;font-weight:500;}
   .admin-summary{display:grid;grid-template-columns:1.05fr 1.45fr 1.4fr auto;gap:10px;align-items:center;width:100%;}
@@ -400,7 +405,7 @@
           <div id="schedulePreviewWrap" style="margin-top:1.1rem;"></div>
         </div>
 
-        <div class="alert info" style="margin-bottom:.9rem;">تُعرض الطلبات هنا مجمّعة حسب تاريخ اللقاء، ومرتبة حسب الوقت. اضغط على أي حجز لتعديل التاريخ أو الوقت أو الحالة أو القاعة.</div>
+        <div class="alert info" style="margin-bottom:.9rem;">تُعرض الطلبات هنا مجمّعة حسب تاريخ اللقاء، ومرتبة حسب الوقت. اضغط على التاريخ لإظهار أو إخفاء حجوزاته، واضغط على أي حجز لعرض التفاصيل وتعديل التاريخ أو الوقت أو الحالة أو القاعة.</div>
         <div id="adminRequestsList"></div>
         <datalist id="roomList"></datalist>
 
@@ -660,13 +665,13 @@ function formatDuration(value, unit){
    بناء بطاقة العرض — full=true لعرض كامل، false لعرض مُخفى (بدون أسماء)
    ============================================================ */
 function formatCodeDisplay(code){
-  // يضمن انقساماً ثابتاً على 3 أسطر داخل الختم الدائري مهما كان سلوك التفاف المتصفح
+  // يعرض رمز التأكيد بشكل واضح مع فواصل الأسطر بين أجزاء الرمز.
   return escapeHtml(code).replace(/-/g, '-<br>');
 }
 function displayGuest(g){
   return g.role ? `${g.role} ${g.name}` : g.name;
 }
-function buildCardHTML(req, full){
+function buildCardHTML(req, full, copyButtonId){
   const badgeClass = STATUS_CLASS[req.status] || 'pending';
   const badgeLabel = STATUS_LABELS[req.status] || 'قيد المراجعة';
   const locationLine = req.location && String(req.location).trim()
@@ -698,8 +703,10 @@ function buildCardHTML(req, full){
     `;
   }
 
+  const copyBlock = copyButtonId ? `<div class="confirmation-code-copy"><button type="button" class="copy-code-btn" id="${escapeHtml(copyButtonId)}">نسخ رمز التأكيد</button></div>` : '';
   return `
-    <div class="seal"><span class="k">رقم الطلب</span><span class="v">${formatCodeDisplay(req.code)}</span></div>
+    <div class="confirmation-code-box"><span class="k">رمز التأكيد</span><span class="v">${formatCodeDisplay(req.code)}</span></div>
+    ${copyBlock}
     <div class="status-center"><span class="badge ${badgeClass}">${badgeLabel}</span></div>
     <dl class="detail-list">
       <div class="row"><dt>الفئة</dt><dd>${escapeHtml(req.category || '')}</dd></div>
@@ -1074,9 +1081,8 @@ document.getElementById('requestForm').addEventListener('submit', async (e)=>{
     <div class="alert info">تم إرسال طلبكم بنجاح.<br><strong>يرجى الاحتفاظ برقم الطلب لغرض متابعة حالة الحجز.</strong></div>
     ${result.sameDayWarning ? '<div class="alert warning">لقد تم تسجيل حجز مسبقاً بهذا الوقت بالفعل، يرجى متابعة حالة الطلب لاحقاً</div>' : ''}
     ${result.afterHoursWarning ? `<div class="alert warning">⚠️ ${escapeHtml(result.afterHoursWarning)}</div>` : ''}
-    ${buildCardHTML(result.request, true)}
+    ${buildCardHTML(result.request, true, 'copyConfirmationCodeBtn')}
     <div class="actions-row">
-      <button type="button" class="copy-code-btn" id="copyConfirmationCodeBtn">نسخ رمز التأكيد</button>
       <button type="button" class="primary" id="printBtn">طباعة / حفظ PDF</button>
       <button type="button" class="secondary" id="newRequestBtn">تقديم طلب آخر</button>
     </div>
@@ -1120,7 +1126,7 @@ document.querySelectorAll('.search-toggle-btn').forEach(btn=>{
 
 function renderTrackedRequest(req, full){
   const box=document.getElementById('trackResults');
-  box.innerHTML=`<div class="card" style="border:1px solid var(--border);border-radius:var(--radius);">${buildCardHTML(req,full)}<div class="actions-row"><button type="button" class="copy-code-btn" id="trackCopyCodeBtn">نسخ رمز التأكيد</button><button type="button" class="primary" id="trackPrintBtn">طباعة / حفظ PDF</button></div></div>`;
+  box.innerHTML=`<div class="card" style="border:1px solid var(--border);border-radius:var(--radius);">${buildCardHTML(req,full,'trackCopyCodeBtn')}<div class="actions-row"><button type="button" class="primary" id="trackPrintBtn">طباعة / حفظ PDF</button></div></div>`;
   document.getElementById('trackCopyCodeBtn').addEventListener('click',function(){copyRequestCode(req.code,this);});
   document.getElementById('trackPrintBtn').addEventListener('click',()=>printRequest(req,full));
 }
@@ -1250,7 +1256,7 @@ async function loadAdminDashboard(){
   listBox.innerHTML=groups.map(group=>{
     const label=group.date==='بدون تاريخ'?'بدون تاريخ':formatDateArabic(group.date);
     const cards=group.items.map(r=>`<details class="admin-item" data-code="${escapeHtml(r.code)}"><summary>${buildAdminSummaryHTML(r)}</summary><div class="admin-body">${buildAdminDetailsHTML(r)}<div class="admin-edit-grid" style="margin-top:1rem;"><div class="field" style="margin-bottom:0;"><label>تاريخ اللقاء</label><input type="date" class="admin-date" data-code="${escapeHtml(r.code)}" value="${escapeHtml(r.date||'')}"></div><div class="field" style="margin-bottom:0;"><label>وقت اللقاء</label><input type="time" class="admin-time-input" data-code="${escapeHtml(r.code)}" value="${escapeHtml(r.time||'')}" step="300"></div></div><div class="admin-live-warning" data-code="${escapeHtml(r.code)}">${adminHoursWarningFor(r,r.date,r.time)}</div><div class="field" style="margin-top:1rem;"><label>تحديث الحالة</label><select class="admin-status" data-code="${escapeHtml(r.code)}"><option value="pending" ${r.status==='pending'?'selected':''}>قيد المراجعة</option><option value="confirmed" ${r.status==='confirmed'?'selected':''}>مؤكَّد</option><option value="rejected" ${r.status==='rejected'?'selected':''}>تم الاعتذار عن الطلب</option></select></div><div class="field"><label>مكان اللقاء</label>${roomSelectHTML(r.code,r.location||'')}</div><button type="button" class="primary admin-save-btn" data-code="${escapeHtml(r.code)}">حفظ التحديث</button><div class="admin-actions"><button type="button" class="admin-delete-btn admin-delete-request" data-code="${escapeHtml(r.code)}">🗑 حذف هذا الطلب</button></div></div></details>`).join('');
-    return `<div class="admin-date-group"><div class="admin-date-header"><span>${escapeHtml(label)}</span><span class="admin-date-count">${toEasternDigits(String(group.items.length))} حجز</span></div>${cards}</div>`;
+    return `<details class="admin-date-group" open><summary class="admin-date-header"><span>${escapeHtml(label)}</span><span class="admin-date-count">${toEasternDigits(String(group.items.length))} حجز</span></summary><div class="admin-date-items">${cards}</div></details>`;
   }).join('');
   listBox.querySelectorAll('.admin-date,.admin-time-input').forEach(input=>input.addEventListener('change',()=>{const code=input.dataset.code,date=listBox.querySelector(`.admin-date[data-code="${CSS.escape(code)}"]`).value,time=listBox.querySelector(`.admin-time-input[data-code="${CSS.escape(code)}"]`).value,req=all.find(x=>x.code===code),warning=listBox.querySelector(`.admin-live-warning[data-code="${CSS.escape(code)}"]`);if(warning&&req)warning.innerHTML=adminHoursWarningFor(req,date,time);}));
   listBox.querySelectorAll('.admin-save-btn').forEach(btn=>btn.addEventListener('click',async()=>{
