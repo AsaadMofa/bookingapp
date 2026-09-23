@@ -441,11 +441,24 @@ const installBanner = document.getElementById('installBanner');
 const installAppBtn = document.getElementById('installAppBtn');
 const installDismissBtn = document.getElementById('installDismissBtn');
 function isStandaloneMode(){ return window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true; }
-function showInstallBanner(){ if(installBanner && !isStandaloneMode()) installBanner.style.display='flex'; }
+function isAndroidDevice(){
+  // إظهار مقترح التثبيت على أجهزة Android فقط، وعدم إظهاره على iPhone/iPad أو الحاسوب.
+  const ua = navigator.userAgent || navigator.vendor || '';
+  return /Android/i.test(ua);
+}
+function showInstallBanner(){
+  if(installBanner && isAndroidDevice() && !isStandaloneMode()) installBanner.style.display='flex';
+  else hideInstallBanner();
+}
 function hideInstallBanner(){ if(installBanner) installBanner.style.display='none'; }
-window.addEventListener('beforeinstallprompt', e=>{ e.preventDefault(); deferredInstallPrompt=e; showInstallBanner(); });
+window.addEventListener('beforeinstallprompt', e=>{
+  e.preventDefault();
+  deferredInstallPrompt=e;
+  if(isAndroidDevice()) showInstallBanner();
+});
 window.addEventListener('appinstalled', ()=>{ deferredInstallPrompt=null; hideInstallBanner(); });
 if(installAppBtn) installAppBtn.addEventListener('click', async ()=>{
+  if(!isAndroidDevice()){ hideInstallBanner(); return; }
   if(!deferredInstallPrompt){ showToast('إذا لم يظهر التثبيت بعد، انتظر لحظات ثم اضغط الزر مرة أخرى.'); return; }
   const p=deferredInstallPrompt; deferredInstallPrompt=null;
   try{ await p.prompt(); await p.userChoice; }catch(err){}
@@ -453,7 +466,8 @@ if(installAppBtn) installAppBtn.addEventListener('click', async ()=>{
 });
 if(installDismissBtn) installDismissBtn.addEventListener('click', hideInstallBanner);
 window.addEventListener('load', ()=>{
-  showInstallBanner();
+  if(isAndroidDevice()) showInstallBanner();
+  else hideInstallBanner();
   if('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js').catch(()=>{});
 });
 
