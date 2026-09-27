@@ -109,7 +109,40 @@
   .badge.pending{background:var(--warning-bg);color:var(--warning);}
   .badge.confirmed{background:var(--success-bg);color:var(--success);}
   .badge.rejected{background:var(--danger-bg);color:var(--danger);}
+  .badge.confirmed.booking-confirmed-label{
+    font-size:1.25rem;
+    line-height:1.5;
+    padding:.65rem 1.35rem;
+    border-radius:12px;
+    border:2px solid currentColor;
+    font-weight:800;
+    letter-spacing:0;
+  }
   .status-center{text-align:center;margin-bottom:1.2rem;}
+  .confirmed-location{
+    margin:.15rem auto 1.25rem;
+    max-width:520px;
+    padding:.85rem 1.1rem;
+    border:2px solid var(--gold);
+    border-radius:12px;
+    background:var(--surface-alt);
+    color:var(--navy);
+    text-align:center;
+  }
+  .confirmed-location .location-label{
+    display:block;
+    font-size:.82rem;
+    font-weight:700;
+    margin-bottom:.2rem;
+    color:var(--muted);
+  }
+  .confirmed-location .location-value{
+    display:block;
+    font-size:1.3rem;
+    line-height:1.45;
+    font-weight:800;
+    color:var(--navy);
+  }
   dl.detail-list{margin:0;}
   dl.detail-list .row{display:flex;justify-content:space-between;gap:10px;padding:.55rem 0;border-bottom:1px solid var(--border);font-size:.92rem;}
   dl.detail-list .row:last-child{border-bottom:none;}
@@ -673,9 +706,12 @@ function displayGuest(g){
 }
 function buildCardHTML(req, full, copyButtonId){
   const badgeClass = STATUS_CLASS[req.status] || 'pending';
-  const badgeLabel = STATUS_LABELS[req.status] || 'قيد المراجعة';
+  const badgeLabel = req.status === 'confirmed' ? 'تم تأكيد الحجز' : (STATUS_LABELS[req.status] || 'قيد المراجعة');
   const locationLine = req.location && String(req.location).trim()
     ? escapeHtml(req.location) : 'سيتم تحديد مكان اللقاء وإشعاركم به لاحقاً';
+  const confirmedLocation = req.status === 'confirmed'
+    ? `<div class="confirmed-location"><span class="location-label">قاعة / مكان اللقاء</span><span class="location-value">${locationLine}</span></div>`
+    : '';
 
   let peopleRows = '';
   if(full){
@@ -704,10 +740,12 @@ function buildCardHTML(req, full, copyButtonId){
   }
 
   const copyBlock = copyButtonId ? `<div class="confirmation-code-copy"><button type="button" class="copy-code-btn" id="${escapeHtml(copyButtonId)}">نسخ رمز التأكيد</button></div>` : '';
+  const locationRow = req.status === 'confirmed' ? '' : `<div class="row"><dt>مكان اللقاء</dt><dd>${locationLine}</dd></div>`;
   return `
     <div class="confirmation-code-box"><span class="k">رمز التأكيد</span><span class="v">${formatCodeDisplay(req.code)}</span></div>
     ${copyBlock}
-    <div class="status-center"><span class="badge ${badgeClass}">${badgeLabel}</span></div>
+    <div class="status-center"><span class="badge ${badgeClass}${req.status === 'confirmed' ? ' booking-confirmed-label' : ''}">${badgeLabel}</span></div>
+    ${confirmedLocation}
     <dl class="detail-list">
       <div class="row"><dt>الفئة</dt><dd>${escapeHtml(req.category || '')}</dd></div>
       <div class="row"><dt>الدائرة</dt><dd>${escapeHtml(req.department)}</dd></div>
@@ -715,7 +753,7 @@ function buildCardHTML(req, full, copyButtonId){
       <div class="row"><dt>التاريخ</dt><dd>${formatDateArabic(req.date)}</dd></div>
       <div class="row"><dt>الوقت</dt><dd>${formatTime12(req.time)}</dd></div>
       <div class="row"><dt>المدة</dt><dd>${formatDuration(Number(req.durationValue), req.durationUnit)}</dd></div>
-      <div class="row"><dt>مكان اللقاء</dt><dd>${locationLine}</dd></div>
+      ${locationRow}
     </dl>
     ${checklistBlock}
     ${!full ? '<p class="masked-note">تم إخفاء أسماء صاحب الدعوة والضيوف. استخدم رقم الطلب لعرض التفاصيل الكاملة.</p>' : ''}
@@ -1236,7 +1274,7 @@ function buildAdminSummaryHTML(r){
 }
 function buildAdminDetailsHTML(r){
   const hostRows=isMinisterRequest(r)?'':`<div class="row"><dt>منصب/صفة صاحب الدعوة</dt><dd>${escapeHtml(r.hostTitle||'')}</dd></div><div class="row"><dt>اسم صاحب الدعوة</dt><dd>${escapeHtml(r.host||'')}</dd></div>`;
-  return `<dl class="detail-list"><div class="row"><dt>الفئة</dt><dd>${escapeHtml(r.category||'')}</dd></div><div class="row"><dt>الدائرة</dt><dd>${escapeHtml(r.department||'')}</dd></div>${hostRows}<div class="row"><dt>الضيوف</dt><dd>${escapeHtml((r.guests||[]).map(displayGuest).join('، '))}</dd></div><div class="row"><dt>عدد الحضور</dt><dd>${escapeHtml(r.attendeeCount||'')}</dd></div><div class="row"><dt>اسم مقدم الطلب</dt><dd>${escapeHtml(r.applicantName||'')}</dd></div><div class="row"><dt>رقم الهاتف</dt><dd dir="ltr" style="text-align:right;">${escapeHtml(r.phone||'')}</dd></div></dl>`;
+  return `<dl class="detail-list"><div class="row"><dt>رمز الحجز</dt><dd dir="ltr" style="text-align:right;font-weight:800;letter-spacing:.3px;">${escapeHtml(r.code||'')}</dd></div><div class="row"><dt>الفئة</dt><dd>${escapeHtml(r.category||'')}</dd></div><div class="row"><dt>الدائرة</dt><dd>${escapeHtml(r.department||'')}</dd></div>${hostRows}<div class="row"><dt>الضيوف</dt><dd>${escapeHtml((r.guests||[]).map(displayGuest).join('، '))}</dd></div><div class="row"><dt>عدد الحضور</dt><dd>${escapeHtml(r.attendeeCount||'')}</dd></div><div class="row"><dt>اسم مقدم الطلب</dt><dd>${escapeHtml(r.applicantName||'')}</dd></div><div class="row"><dt>رقم الهاتف</dt><dd dir="ltr" style="text-align:right;">${escapeHtml(r.phone||'')}</dd></div></dl>`;
 }
 function adminHoursWarningFor(r,date,time){
   const [h,m]=String(time||'').split(':').map(Number); if(Number.isNaN(h)||Number.isNaN(m)) return '';
